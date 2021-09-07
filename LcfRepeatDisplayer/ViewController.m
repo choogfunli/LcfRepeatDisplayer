@@ -9,13 +9,22 @@
 #import "LcfCycCollectionViewLayout.h"
 #import "LcfCycCollectionViewCell.h"
 
+#define LEFTTABLEVIEWWIDTH      [UIScreen mainScreen].bounds.size.width * 0.27
+#define RIGHTTABLEVIEWWIDTH     [UIScreen mainScreen].bounds.size.width * 0.73
+#define SCREENWIDTH             [UIScreen mainScreen].bounds.size.width
+#define SCREENHEIGHT            [UIScreen mainScreen].bounds.size.height
+
 static NSInteger gSectionCount = 10;
 static NSInteger gItemCount = 10;
+static NSString * const leftCellIdentifier = @"leftCellIdentifier";
+static NSString * const rightCellIdentifier = @"rightCellIdentifier";
 
-@interface ViewController () <UICollectionViewDelegate, UICollectionViewDataSource>
+@interface ViewController () <UICollectionViewDelegate, UICollectionViewDataSource, UITableViewDelegate, UITableViewDataSource>
 
 @property (nonatomic, strong) UICollectionView *collectionView;
 @property (nonatomic, strong) NSTimer *timer;
+@property (nonatomic, strong) UITableView *leftTableView;
+@property (nonatomic, strong) UITableView *rightTableView;
 
 @end
 
@@ -27,6 +36,8 @@ static NSInteger gItemCount = 10;
     self.view.backgroundColor = [UIColor lightGrayColor];
     
     [self.view addSubview:self.collectionView];
+    [self.view addSubview:self.leftTableView];
+    [self.view addSubview:self.rightTableView];
     //滚动到屏幕中央
     [self.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:gSectionCount / 2] atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:NO];
 }
@@ -44,7 +55,6 @@ static NSInteger gItemCount = 10;
 
 - (void)timerHandle:(NSTimer *)timer {
     NSArray *array = self.collectionView.indexPathsForVisibleItems;
-    //取出最中间的cell的index
     array = [array sortedArrayUsingComparator:^NSComparisonResult(NSIndexPath *obj1, NSIndexPath *obj2) {
         if (obj1.section == obj2.section) {
             return obj1.row > obj2.row;
@@ -54,7 +64,7 @@ static NSInteger gItemCount = 10;
     }];
     
     __block NSIndexPath *index = array[1];
-    [UIView animateWithDuration:0.001 animations:^{
+    [UIView animateWithDuration:0.1 animations:^{
         if (index.row == gItemCount - 1) {
             index = [NSIndexPath indexPathForRow:index.row inSection:gSectionCount / 2 - 1];
         } else {
@@ -77,8 +87,8 @@ static NSInteger gItemCount = 10;
     if (!_collectionView) {
         LcfCycCollectionViewLayout *layout = [[LcfCycCollectionViewLayout alloc] init];
         layout.itemSize = CGSizeMake(180, 100);
-        layout.minimumLineSpacing = 5;
-        layout.minimumInteritemSpacing = 5;
+        layout.minimumLineSpacing = 1;
+        layout.minimumInteritemSpacing = 1;
         layout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
         _collectionView = [[UICollectionView alloc] initWithFrame:CGRectMake(0, 100, self.view.bounds.size.width, 150) collectionViewLayout:layout];
         _collectionView.backgroundColor = [UIColor grayColor];
@@ -97,7 +107,51 @@ static NSInteger gItemCount = 10;
     return _timer;
 }
 
-#pragma mark - dataSource
+// MARK: - 左边的 tableView
+- (UITableView *)leftTableView {
+ 
+    if (!_leftTableView) {
+ 
+        UITableView *tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, LEFTTABLEVIEWWIDTH, SCREENHEIGHT)];
+ 
+        [self.view addSubview:tableView];
+ 
+        _leftTableView = tableView;
+ 
+        tableView.dataSource = self;
+        tableView.delegate = self;
+ 
+        [tableView registerClass:[UITableViewCell class] forCellReuseIdentifier:leftCellIdentifier];
+        tableView.backgroundColor = [UIColor redColor];
+        tableView.tableFooterView = [[UIView alloc] init];
+ 
+    }
+    return _leftTableView;
+}
+ 
+// MARK: - 右边的 tableView
+- (UITableView *)rightTableView {
+ 
+    if (!_rightTableView) {
+ 
+        UITableView *tableView = [[UITableView alloc] initWithFrame:CGRectMake(LEFTTABLEVIEWWIDTH, 0, RIGHTTABLEVIEWWIDTH, SCREENHEIGHT)];
+ 
+        [self.view addSubview:tableView];
+ 
+        _rightTableView = tableView;
+ 
+        tableView.dataSource = self;
+        tableView.delegate = self;
+ 
+        [tableView registerClass:[UITableViewCell class] forCellReuseIdentifier:rightCellIdentifier];
+        tableView.backgroundColor = [UIColor cyanColor];
+        tableView.tableFooterView = [[UIView alloc] init];
+ 
+    }
+    return _rightTableView;
+}
+
+#pragma mark - UICollectionViewDataSource
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
     return gSectionCount;
 }
@@ -112,5 +166,63 @@ static NSInteger gItemCount = 10;
     return cell;
 }
 
+#pragma mark - UITableViewDataSource
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    if (tableView == self.leftTableView) {
+        return 40;
+    }
+    return 8;
+}
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    if (tableView == self.leftTableView) {
+        return 1;
+    }
+    return 40;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    UITableViewCell *cell;
+    if (tableView == self.leftTableView) {
+        cell = [tableView dequeueReusableCellWithIdentifier:leftCellIdentifier forIndexPath:indexPath];
+        cell.textLabel.text = [NSString stringWithFormat:@"%ld", indexPath.row];
+    } else {
+        cell = [tableView dequeueReusableCellWithIdentifier:rightCellIdentifier forIndexPath:indexPath];
+        cell.textLabel.text = [NSString stringWithFormat:@"第%ld组-第%ld行", indexPath.section, indexPath.row];
+    }
+    return cell;
+}
+
+
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
+ 
+    if (tableView == self.rightTableView) {
+        return [NSString stringWithFormat:@"第 %ld 组", section];
+    }
+    return nil;
+}
+
+#pragma mark - UITableViewDelegate
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    if (scrollView == self.leftTableView) {
+        return;
+    }
+    //取出显示在视图且最靠上的cell的indexpath
+    NSIndexPath *topHeaderViewIndexPath = [[self.rightTableView indexPathsForVisibleRows] firstObject];
+    //左侧tableview移动的indexpath
+    NSIndexPath *moveToIndexPath = [NSIndexPath indexPathForRow:topHeaderViewIndexPath.section inSection:0];
+    //移动左侧tableview到指定indexpath居中显示
+    [self.leftTableView selectRowAtIndexPath:moveToIndexPath animated:YES scrollPosition:UITableViewScrollPositionMiddle];
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (tableView == self.leftTableView) {
+        NSIndexPath *moveToIndexPath = [NSIndexPath indexPathForRow:0 inSection:indexPath.row];
+        //将右侧tableview移动到指定位置
+        [self.rightTableView selectRowAtIndexPath:moveToIndexPath animated:YES scrollPosition:UITableViewScrollPositionTop];
+        //取消选中效果
+        [self.rightTableView deselectRowAtIndexPath:moveToIndexPath animated:YES];
+    }
+}
 
 @end

@@ -148,6 +148,7 @@
 		D03CFC5D26CCB7BA00B069B7 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				D06EEAF726DD26F1003E227B /* ShoppingUITableView */,
 				D03CFC5E26CCB7D500B069B7 /* RepeatDisplayer */,
 			);
 			name = View;
@@ -169,6 +170,13 @@
 			children = (
 			);
 			name = Others;
+			sourceTree = "<group>";
+		};
+		D06EEAF726DD26F1003E227B /* ShoppingUITableView */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = ShoppingUITableView;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
